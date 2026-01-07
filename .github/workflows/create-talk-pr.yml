@@ -6,7 +6,7 @@ on:
 
 jobs:
   create-talk-pr:
-    if: github.event.label.name == 'talks'
+    if: github.event.label.name == 'talk-proposal'
     runs-on: ubuntu-latest
     permissions:
       contents: write

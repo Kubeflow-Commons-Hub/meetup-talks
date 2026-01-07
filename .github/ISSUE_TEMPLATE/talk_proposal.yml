@@ -1,7 +1,7 @@
 name: 🎤 Talk Proposal
 description: Submit a talk proposal for Kubeflow Commons Hub meetup
 title: "[Talk] "
-labels: ["talks"]
+labels: ["talk-proposal"]
 body:
   - type: markdown
     attributes:

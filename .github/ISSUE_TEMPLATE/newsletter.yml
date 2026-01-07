@@ -1,0 +1,11 @@
+name: 📰 Newsletter Collection Box
+description: Monthly newsletter collection for community news
+title: "[Newsletter] "
+labels: ["newsletter"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Newsletter Collection Box
+        Post links to blog posts, news articles, and resources related to Kubeflow and ML/AI on Kubernetes.
+
