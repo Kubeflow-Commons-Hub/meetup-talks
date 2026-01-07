@@ -48,11 +48,11 @@ body:
   - type: textarea
     id: speaker_bio
     attributes:
-      label: Speaker Bio
+      label: Speaker Bio (optional)
       description: A brief bio about yourself (2-3 sentences)
       placeholder: "Tell us about yourself..."
     validations:
-      required: true
+      required: false
 
   - type: textarea
     id: abstract
