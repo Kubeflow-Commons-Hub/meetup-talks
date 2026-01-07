@@ -10,6 +10,10 @@
   color: "1D76DB"
   description: Collection box for links of this month
 
+- name: submitted
+  color: "FBCA04"
+  description: Talk proposal submitted
+
 - name: enhancement
   color: "A2EEEF"
   description: New feature or request
