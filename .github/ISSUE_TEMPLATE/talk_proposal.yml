@@ -1,0 +1,146 @@
+name: 🎤 Talk Proposal
+description: Submit a talk proposal for Kubeflow Commons Hub meetup
+title: "[Talk] "
+labels: ["talk-proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Submit Your Talk Proposal
+        Thank you for your interest in speaking at Kubeflow Commons Hub meetup!
+
+  - type: input
+    id: title
+    attributes:
+      label: Talk Title
+      description: What is the title of your talk?
+      placeholder: "e.g., Getting Started with Kubeflow Pipelines"
+    validations:
+      required: true
+
+  - type: input
+    id: speaker_name
+    attributes:
+      label: Speaker Name
+      description: Your full name
+      placeholder: "e.g., John Doe"
+    validations:
+      required: true
+
+  - type: input
+    id: speaker_github
+    attributes:
+      label: GitHub Username
+      description: Your GitHub username (without @)
+      placeholder: "e.g., johndoe"
+    validations:
+      required: true
+
+  - type: input
+    id: speaker_linkedin
+    attributes:
+      label: LinkedIn Profile (optional)
+      description: Your LinkedIn profile URL
+      placeholder: "https://linkedin.com/in/johndoe"
+    validations:
+      required: false
+
+  - type: textarea
+    id: speaker_bio
+    attributes:
+      label: Speaker Bio
+      description: A brief bio about yourself (2-3 sentences)
+      placeholder: "Tell us about yourself..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: abstract
+    attributes:
+      label: Talk Abstract
+      description: Describe what your talk will cover
+      placeholder: "What will attendees learn from your talk?"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: duration
+    attributes:
+      label: Talk Duration
+      description: Expected duration of your talk
+      options:
+        - 15 minutes (Lightning Talk)
+        - 30 minutes
+        - 45 minutes
+        - 60 minutes (Workshop)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: level
+    attributes:
+      label: Target Audience Level
+      description: Who is this talk for?
+      options:
+        - Beginner
+        - Intermediate
+        - Advanced
+        - All Levels
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: tags
+    attributes:
+      label: Tags
+      description: Select relevant tags for your talk
+      options:
+        - label: Kubeflow Pipelines
+        - label: Kubeflow Training Operator
+        - label: Kubeflow Notebooks
+        - label: KServe / Model Serving
+        - label: Katib / AutoML
+        - label: MLOps
+        - label: Kubernetes
+        - label: Getting Started
+        - label: Best Practices
+        - label: Case Study
+        - label: Demo / Hands-on
+        - label: Architecture
+        - label: Open Source
+
+  - type: textarea
+    id: prerequisites
+    attributes:
+      label: Prerequisites (optional)
+      description: Any prerequisites for the audience
+      placeholder: "e.g., Basic understanding of Kubernetes"
+    validations:
+      required: false
+
+  - type: input
+    id: preferred_date
+    attributes:
+      label: Preferred Date (optional)
+      description: If you have a preferred date for the talk
+      placeholder: "e.g., January 2026 or Any"
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional_info
+    attributes:
+      label: Additional Information (optional)
+      description: Anything else you'd like to share
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this proposal, you agree to follow our Code of Conduct
+      options:
+        - label: I agree to follow the Code of Conduct
+          required: true
+

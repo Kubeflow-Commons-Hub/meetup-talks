@@ -1,0 +1,155 @@
+name: Create Talk PR from Issue
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  create-talk-pr:
+    if: github.event.label.name == 'talk-proposal'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Parse issue and create PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const body = issue.body;
+            
+            // Parse issue form fields
+            function parseField(body, label) {
+              const regex = new RegExp(`### ${label}\\s*\\n\\s*([\\s\\S]*?)(?=\\n###|$)`, 'i');
+              const match = body.match(regex);
+              if (match) {
+                return match[1].trim();
+              }
+              return '';
+            }
+            
+            function parseTags(body) {
+              const tagsSection = parseField(body, 'Tags');
+              const tags = [];
+              const lines = tagsSection.split('\n');
+              for (const line of lines) {
+                if (line.includes('[X]') || line.includes('[x]')) {
+                  const tag = line.replace(/- \[.\]\s*/, '').trim();
+                  if (tag) tags.push(tag);
+                }
+              }
+              return tags;
+            }
+            
+            const title = parseField(body, 'Talk Title');
+            const speakerName = parseField(body, 'Speaker Name');
+            const speakerGithub = parseField(body, 'GitHub Username');
+            const speakerLinkedin = parseField(body, 'LinkedIn Profile \\(optional\\)');
+            const speakerBio = parseField(body, 'Speaker Bio');
+            const abstract = parseField(body, 'Talk Abstract');
+            const duration = parseField(body, 'Talk Duration');
+            const level = parseField(body, 'Target Audience Level');
+            const tags = parseTags(body);
+            const prerequisites = parseField(body, 'Prerequisites \\(optional\\)');
+            const preferredDate = parseField(body, 'Preferred Date \\(optional\\)');
+            const additionalInfo = parseField(body, 'Additional Information \\(optional\\)');
+            
+            // Generate filename from title
+            const slug = title.toLowerCase()
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-|-$/g, '');
+            
+            const date = new Date().toISOString().split('T')[0];
+            const filename = `content/talks/${date}-${slug}.md`;
+            
+            // Create markdown content
+            const tagsYaml = tags.length > 0 ? `\ntags:\n${tags.map(t => `  - "${t}"`).join('\n')}` : '';
+            
+            const content = `---
+title: "${title}"
+date: ${date}
+speaker:
+  name: "${speakerName}"
+  github: "${speakerGithub}"
+  linkedin: "${speakerLinkedin || ''}"
+bio: |
+  ${speakerBio.split('\n').join('\n  ')}
+duration: "${duration}"
+level: "${level}"${tagsYaml}
+status: proposed
+issue: ${issue.number}
+---
+
+## Abstract
+
+${abstract}
+
+${prerequisites ? `## Prerequisites\n\n${prerequisites}\n` : ''}
+${additionalInfo ? `## Additional Information\n\n${additionalInfo}\n` : ''}
+---
+
+*Proposed via [Issue #${issue.number}](${issue.html_url})*
+`;
+
+            // Create a new branch
+            const branchName = `talk-proposal/${slug}-${issue.number}`;
+            
+            // Get the default branch SHA
+            const { data: ref } = await github.rest.git.getRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'heads/main'
+            });
+            
+            // Create new branch
+            await github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `refs/heads/${branchName}`,
+              sha: ref.object.sha
+            });
+            
+            // Create the file
+            await github.rest.repos.createOrUpdateFileContents({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              path: filename,
+              message: `Add talk proposal: ${title}`,
+              content: Buffer.from(content).toString('base64'),
+              branch: branchName
+            });
+            
+            // Create PR
+            const { data: pr } = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[Talk Proposal] ${title}`,
+              body: `## Talk Proposal\n\n**Speaker:** ${speakerName} (@${speakerGithub})\n**Duration:** ${duration}\n**Level:** ${level}\n\n### Abstract\n${abstract}\n\n---\n\nCloses #${issue.number}`,
+              head: branchName,
+              base: 'main'
+            });
+            
+            // Add comment to issue
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: `🎉 Thank you for your talk proposal!\n\nA PR has been automatically created: #${pr.number}\n\nOur team will review it shortly.`
+            });
+            
+            // Add label to indicate PR created
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              labels: ['pr-created']
+            });
+            
+            console.log(`Created PR #${pr.number} for issue #${issue.number}`);
+
