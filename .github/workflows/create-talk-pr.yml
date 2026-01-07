@@ -23,9 +23,8 @@ jobs:
             const issue = context.payload.issue;
             const body = issue.body;
             
-            // Parse issue form fields
             function parseField(body, label) {
-              const regex = new RegExp(`### ${label}\\s*\\n\\s*([\\s\\S]*?)(?=\\n###|$)`, 'i');
+              const regex = new RegExp('### ' + label + '\\s*\\n\\s*([\\s\\S]*?)(?=\\n###|$)', 'i');
               const match = body.match(regex);
               if (match) {
                 return match[1].trim();
@@ -58,12 +57,10 @@ jobs:
             const prerequisites = parseField(body, 'Prerequisites \\(optional\\)');
             const additionalInfo = parseField(body, 'Additional Information \\(optional\\)');
             
-            // Generate filename from title
             const slug = title.toLowerCase()
               .replace(/[^a-z0-9]+/g, '-')
               .replace(/^-|-$/g, '');
             
-            // Get current year and month
             const now = new Date();
             const year = now.getFullYear();
             const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -71,53 +68,48 @@ jobs:
             const month = monthNames[now.getMonth()];
             const date = now.toISOString().split('T')[0];
             
-            // Create folder path: content/talks/YEAR/MONTH/
-            const folderPath = `content/talks/${year}/${month}`;
-            const filename = `${folderPath}/${slug}.md`;
+            const folderPath = 'content/talks/' + year + '/' + month;
+            const filename = folderPath + '/' + slug + '.md';
             
-            // Create markdown content
-            const tagsYaml = tags.length > 0 ? `\ntags:\n${tags.map(t => `  - "${t}"`).join('\n')}` : '';
-            const bioYaml = speakerBio ? `\nbio: |\n  ${speakerBio.split('\n').join('\n  ')}` : '';
+            const tagsYaml = tags.length > 0 ? '\ntags:\n' + tags.map(t => '  - "' + t + '"').join('\n') : '';
+            const bioYaml = speakerBio ? '\nbio: |\n  ' + speakerBio.split('\n').join('\n  ') : '';
             
-            const content = `---
-title: "${title}"
-date: ${date}
-speaker:
-  name: "${speakerName}"
-  github: "${speakerGithub}"
-  linkedin: "${speakerLinkedin || ''}"${bioYaml}
-duration: "${duration}"
-level: "${level}"${tagsYaml}
-issue: ${issue.number}
----
+            let content = '---\n';
+            content += 'title: "' + title + '"\n';
+            content += 'date: ' + date + '\n';
+            content += 'speaker:\n';
+            content += '  name: "' + speakerName + '"\n';
+            content += '  github: "' + speakerGithub + '"\n';
+            content += '  linkedin: "' + (speakerLinkedin || '') + '"' + bioYaml + '\n';
+            content += 'duration: "' + duration + '"\n';
+            content += 'level: "' + level + '"' + tagsYaml + '\n';
+            content += 'issue: ' + issue.number + '\n';
+            content += '---\n\n';
+            content += '## Abstract\n\n';
+            content += abstract + '\n\n';
+            if (prerequisites) {
+              content += '## Prerequisites\n\n' + prerequisites + '\n\n';
+            }
+            if (additionalInfo) {
+              content += '## Additional Information\n\n' + additionalInfo + '\n\n';
+            }
+            content += '---\n\n';
+            content += '*Added via [Issue #' + issue.number + '](' + issue.html_url + ')*\n';
 
-## Abstract
-
-${abstract}
-
-${prerequisites ? `## Prerequisites\n\n${prerequisites}\n` : ''}
-${additionalInfo ? `## Additional Information\n\n${additionalInfo}\n` : ''}
----
-
-*Added via [Issue #${issue.number}](${issue.html_url})*
-`;
-
-            // Commit directly to main
             await github.rest.repos.createOrUpdateFileContents({
               owner: context.repo.owner,
               repo: context.repo.repo,
               path: filename,
-              message: `Add talk: ${title} by ${speakerName}`,
+              message: 'Add talk: ' + title + ' by ' + speakerName,
               content: Buffer.from(content).toString('base64'),
               branch: 'main'
             });
             
-            // Add comment to issue
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issue.number,
-              body: `✅ Talk added to repository!\n\n📁 File: \`${filename}\`\n\nThank you for your contribution to Kubeflow Commons Hub! 🎉`
+              body: '✅ Talk added to repository!\n\n📁 File: `' + filename + '`\n\nThank you for your contribution to Kubeflow Commons Hub! 🎉'
             });
             
-            console.log(`Added talk file: ${filename}`);
+            console.log('Added talk file: ' + filename);
