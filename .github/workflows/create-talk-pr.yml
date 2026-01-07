@@ -1,23 +1,22 @@
-name: Create Talk PR from Issue
+name: Add Talk on Issue Close
 
 on:
   issues:
-    types: [labeled]
+    types: [closed]
 
 jobs:
-  create-talk-pr:
-    if: github.event.label.name == 'approved'
+  add-talk:
+    if: contains(github.event.issue.labels.*.name, 'talk-proposal')
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
       issues: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Parse issue and create PR
+      - name: Parse issue and add talk
         uses: actions/github-script@v7
         with:
           script: |
@@ -51,13 +50,12 @@ jobs:
             const speakerName = parseField(body, 'Speaker Name');
             const speakerGithub = parseField(body, 'GitHub Username');
             const speakerLinkedin = parseField(body, 'LinkedIn Profile \\(optional\\)');
-            const speakerBio = parseField(body, 'Speaker Bio');
+            const speakerBio = parseField(body, 'Speaker Bio \\(optional\\)');
             const abstract = parseField(body, 'Talk Abstract');
             const duration = parseField(body, 'Talk Duration');
             const level = parseField(body, 'Target Audience Level');
             const tags = parseTags(body);
             const prerequisites = parseField(body, 'Prerequisites \\(optional\\)');
-            const preferredDate = parseField(body, 'Preferred Date \\(optional\\)');
             const additionalInfo = parseField(body, 'Additional Information \\(optional\\)');
             
             // Generate filename from title
@@ -65,11 +63,21 @@ jobs:
               .replace(/[^a-z0-9]+/g, '-')
               .replace(/^-|-$/g, '');
             
-            const date = new Date().toISOString().split('T')[0];
-            const filename = `content/talks/${date}-${slug}.md`;
+            // Get current year and month
+            const now = new Date();
+            const year = now.getFullYear();
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                               'July', 'August', 'September', 'October', 'November', 'December'];
+            const month = monthNames[now.getMonth()];
+            const date = now.toISOString().split('T')[0];
+            
+            // Create folder path: content/talks/YEAR/MONTH/
+            const folderPath = `content/talks/${year}/${month}`;
+            const filename = `${folderPath}/${slug}.md`;
             
             // Create markdown content
             const tagsYaml = tags.length > 0 ? `\ntags:\n${tags.map(t => `  - "${t}"`).join('\n')}` : '';
+            const bioYaml = speakerBio ? `\nbio: |\n  ${speakerBio.split('\n').join('\n  ')}` : '';
             
             const content = `---
 title: "${title}"
@@ -77,12 +85,9 @@ date: ${date}
 speaker:
   name: "${speakerName}"
   github: "${speakerGithub}"
-  linkedin: "${speakerLinkedin || ''}"
-bio: |
-  ${speakerBio.split('\n').join('\n  ')}
+  linkedin: "${speakerLinkedin || ''}"${bioYaml}
 duration: "${duration}"
 level: "${level}"${tagsYaml}
-status: proposed
 issue: ${issue.number}
 ---
 
@@ -94,45 +99,17 @@ ${prerequisites ? `## Prerequisites\n\n${prerequisites}\n` : ''}
 ${additionalInfo ? `## Additional Information\n\n${additionalInfo}\n` : ''}
 ---
 
-*Proposed via [Issue #${issue.number}](${issue.html_url})*
+*Added via [Issue #${issue.number}](${issue.html_url})*
 `;
 
-            // Create a new branch
-            const branchName = `talk-proposal/${slug}-${issue.number}`;
-            
-            // Get the default branch SHA
-            const { data: ref } = await github.rest.git.getRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: 'heads/main'
-            });
-            
-            // Create new branch
-            await github.rest.git.createRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: `refs/heads/${branchName}`,
-              sha: ref.object.sha
-            });
-            
-            // Create the file
+            // Commit directly to main
             await github.rest.repos.createOrUpdateFileContents({
               owner: context.repo.owner,
               repo: context.repo.repo,
               path: filename,
-              message: `Add talk proposal: ${title}`,
+              message: `Add talk: ${title} by ${speakerName}`,
               content: Buffer.from(content).toString('base64'),
-              branch: branchName
-            });
-            
-            // Create PR
-            const { data: pr } = await github.rest.pulls.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `[Talk Proposal] ${title}`,
-              body: `## Talk Proposal\n\n**Speaker:** ${speakerName} (@${speakerGithub})\n**Duration:** ${duration}\n**Level:** ${level}\n\n### Abstract\n${abstract}\n\n---\n\nCloses #${issue.number}`,
-              head: branchName,
-              base: 'main'
+              branch: 'main'
             });
             
             // Add comment to issue
@@ -140,16 +117,7 @@ ${additionalInfo ? `## Additional Information\n\n${additionalInfo}\n` : ''}
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issue.number,
-              body: `🎉 Thank you for your talk proposal!\n\nA PR has been automatically created: #${pr.number}\n\nOur team will review it shortly.`
+              body: `✅ Talk added to repository!\n\n📁 File: \`${filename}\`\n\nThank you for your contribution to Kubeflow Commons Hub! 🎉`
             });
             
-            // Add label to indicate PR created
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue.number,
-              labels: ['pr-created']
-            });
-            
-            console.log(`Created PR #${pr.number} for issue #${issue.number}`);
-
+            console.log(`Added talk file: ${filename}`);
