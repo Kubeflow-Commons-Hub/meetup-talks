@@ -10,9 +10,9 @@
   color: "1D76DB"
   description: Collection box for links of this month
 
-- name: submitted
-  color: "FBCA04"
-  description: Talk proposal submitted
+- name: approved
+  color: "0E8A16"
+  description: Talk proposal approved - triggers PR creation
 
 - name: enhancement
   color: "A2EEEF"
