@@ -1,7 +1,7 @@
 name: 🎤 Talk Proposal
 description: Submit a talk proposal for Kubeflow Commons Hub meetup
 title: "[Talk] "
-labels: ["talk-proposal"]
+labels: ["talks"]
 body:
   - type: markdown
     attributes:
@@ -115,15 +115,6 @@ body:
       label: Prerequisites (optional)
       description: Any prerequisites for the audience
       placeholder: "e.g., Basic understanding of Kubernetes"
-    validations:
-      required: false
-
-  - type: input
-    id: preferred_date
-    attributes:
-      label: Preferred Date (optional)
-      description: If you have a preferred date for the talk
-      placeholder: "e.g., January 2026 or Any"
     validations:
       required: false
 

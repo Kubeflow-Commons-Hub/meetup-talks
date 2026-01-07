@@ -1,0 +1,13 @@
+name: 💡 Idea
+description: Share an idea for the community
+title: "[Idea] "
+labels: ["idea"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: Describe your idea
+    validations:
+      required: true
+
